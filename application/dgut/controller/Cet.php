@@ -24,6 +24,11 @@ class Cet
         echo $image;exit;
     }
 
+    public function getPhoto($token){
+        echo (new CetService())->getImgByToken($token);
+        exit;
+    }
+
     public function getCetCookies($key) {
     }
 

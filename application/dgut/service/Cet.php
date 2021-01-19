@@ -11,6 +11,7 @@ use GuzzleHttp\Cookie\CookieJar;
 use Mohuishou\ImageOCR\Image;
 use Mohuishou\ImageOCR\ImageOCR;
 use QL\QueryList;
+use think\Console;
 use think\facade\Cache;
 
 class Cet
@@ -21,6 +22,7 @@ class Cet
     private $validateUrl = "http://appquery.neea.edu.cn/api/verify/get";
     private $baseListUrl = "http://appquery.neea.edu.cn/api/result/list?";
     private $baseDetailUrl = "http://appquery.neea.edu.cn/api/result/data?";
+    private $basePhotoUrl = "http://appquery.neea.edu.cn/api/result/photo?";
 
 
     public function __construct()
@@ -34,6 +36,18 @@ class Cet
         $ql = QueryList::getInstance();
         $res = $ql->get($this->validateUrl,[],['cookies' => $this->cookiesJar])->getHtml();
         $this->saveCookiesToCache($key,serialize($this->cookiesJar));
+        header('Content-Type:image/jpeg');
+        return $res;
+    }
+
+    public function getImgByToken($token) {
+        $url = $this->basePhotoUrl.'poken='.$token;
+        $res = $this->client->request('get',$url,[
+            'headers' => [
+                "Referer" => "http://cjcx.neea.edu.cn/",
+                "Host" => "appquery.neea.edu.cn"
+            ]
+        ])->getBody();
         header('Content-Type:image/jpeg');
         return $res;
     }
