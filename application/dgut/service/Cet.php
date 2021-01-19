@@ -20,6 +20,7 @@ class Cet
 
     private $validateUrl = "http://appquery.neea.edu.cn/api/verify/get";
     private $baseListUrl = "http://appquery.neea.edu.cn/api/result/list?";
+    private $baseDetailUrl = "http://appquery.neea.edu.cn/api/result/data?";
 
 
     public function __construct()
@@ -52,5 +53,16 @@ class Cet
 
     public function saveCookiesToCache($key,$jar) {
         Cache::set($key,$jar);
+    }
+
+    public function getScoreDetail($token) {
+        $url = $this->baseDetailUrl.'token='.$token;
+        $res = $this->client->request('get',$url,[
+            'headers' => [
+                "Referer" => "http://cjcx.neea.edu.cn/",
+                "Host" => "appquery.neea.edu.cn"
+            ]
+        ]);
+        return json_decode($res->getBody()->getContents(),true);
     }
 }

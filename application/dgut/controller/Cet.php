@@ -15,6 +15,10 @@ class Cet
         return (new CetService())->getScoreList($code,$key,$type,$idCard,$name);
     }
 
+    public function getScoreDetail($token) {
+        return (new CetService())->getScoreDetail($token);
+    }
+
     public function getCetCaptcha($key) {
         $image = (new CetService())->getValidateImg($key);
         echo $image;exit;
