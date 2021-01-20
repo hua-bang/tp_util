@@ -5,6 +5,7 @@ namespace app\dgut\controller;
 
 
 use app\dgut\service\Jw;
+use app\utils\controller\ResponseUtil;
 
 class Score
 {
@@ -19,11 +20,12 @@ class Score
     public function getTokenFromJW() {
         $username = input("post.username");
         $password = input("post.password");
-        return (new Jw())->loginJwByCas($username,$password);
+        $token = (new Jw())->loginJwByCas($username,$password);
+        return (new ResponseUtil(['data'=> ['token' => $token]]))->toResult();
     }
 
     public function getScore() {
         $configData = input("post.config");
-        return (new Jw())->getScore($configData);
+        return (new ResponseUtil(['data' => (new Jw())->getScore($configData)]))->toResult();
     }
 }

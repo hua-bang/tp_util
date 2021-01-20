@@ -4,6 +4,7 @@
 namespace app\dgut\service;
 
 
+use app\lib\exception\TokenException;
 use app\utils\controller\Generate;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
@@ -18,6 +19,11 @@ class Jw extends BaseService
     private $loginUrl = "https://cas.dgut.edu.cn/home/Oauth/getToken/appid/jwyd.html";  //中央认证地址
     private $timeChooseArr = ['sjxz1','sjxz2','sjxz3'];
     private $scoreChooseArr = ['yscj','yxcj'];
+    private $timeType;
+    private $scoreType;
+    private $beginYear;
+    private $endYear;
+    private $term;
 
     /**
      * Jw constructor.
@@ -96,7 +102,11 @@ class Jw extends BaseService
             'allow_redirects' => true
         ]);
         $casToAppIdMessage = $response->getBody()->getContents();
-        return json_decode(json_decode($casToAppIdMessage,true),true);
+        $res = json_decode(json_decode($casToAppIdMessage,true),true);
+        if($res['code']!=1) {
+             throw new TokenException(['msg'=>'登录失败，请检验用户名，密码。']);
+        };
+        return $res;
     }
 
     /**
@@ -124,24 +134,67 @@ class Jw extends BaseService
     }
 
     protected function getScoreDataFromStr($str) {
+        if($this->timeType==0)
+            return $this->getScoreDataByTimeTypeFirst($str);
+        if($this->timeType==1)
+            return $this->getScoreDataByTimeTypeSecond($str);
+        if($this->timeType==2)
+            return $this->getScoreDataByTimeTypeThird($str);
+    }
+
+    protected function getScoreDataByTimeTypeFirst($str) {
+        $ql = QueryList::getInstance();
+        $rule = [
+            'score' => ['body table:odd','html','',function($content){return iconv("gb2312","utf-8//IGNORE", $content);}],
+            'term' => ['body table:even','text','',function($content){return iconv("gb2312","utf-8//IGNORE", $content);}]
+        ];
+        $res = $ql->html($str)->rules($rule)->queryData(function ($item, $key) {
+            if(array_key_exists("score",$item)){
+                $rule = [
+                    'content' =>   ['tbody>tr','html']
+                ];
+                $item['term'] = str_replace(["\r"."\n","\t"],"",$item['term']);
+                $item['score'] = (new QueryList())->html($item['score'])->rules($rule)->queryData(function ($i) {
+                    $tableRule = $this->getTableRules();
+                    $i = (new QueryList())->html($i['content'])->rules($tableRule)->queryData()[0];
+                    return $i;
+                });
+                return $item;
+            }
+        });
+        array_pop($res);
+        return $res;
+    }
+
+    protected function getScoreDataByTimeTypeSecond($str) {
+        $ql = QueryList::getInstance();
+        $rule = [
+            'score' => ['body table:odd','html','',function($content){return iconv("gb2312","utf-8//IGNORE", $content);}]
+        ];
+        return $ql->html($str)->rules($rule)->queryData(function ($item, $key) {
+            $item['term'] = $this->beginYear."-".$this->endYear."学年第".($key+1)."学期";
+            $rule = [
+              'content' =>   ['tbody>tr','html']
+            ];
+            $item['score'] = (new QueryList())->html($item['score'])->rules($rule)->queryData(function ($i) {
+                $tableRule = $this->getTableRules();
+                $i = (new QueryList())->html($i['content'])->rules($tableRule)->queryData()[0];
+                return $i;
+            });
+            return $item;
+        });
+    }
+
+    protected function getScoreDataByTimeTypeThird($str) {
         $ql = QueryList::getInstance();
         $rule = [
             'score' => ['body table:eq(1)>tbody>tr','html','',function($content){return iconv("gb2312","utf-8//IGNORE", $content);}]
         ];
-        $data = $ql->html($str)->rules($rule)->query()->getData(function ($item) {
-            $item = (new QueryList())->html($item['score'])->rules([
-                'name' => ['td:eq(1)','html'],
-                'credit' => ['td:eq(2)','text'],
-                'type' =>['td:eq(3)','text'],
-                'quality' =>['td:eq(4)','text'],
-                'assessment_method' => ['td:eq(5)','text'],
-                'get_method' => ['td:eq(6)','text'],
-                'score' => ['td:eq(7)','text'],
-            ])->queryData();
+        $tableRule = $this->getTableRules();
+        return $ql->html($str)->rules($rule)->query()->getData(function ($item) use ($tableRule) {
+            $item = (new QueryList())->html($item['score'])->rules($tableRule)->queryData();
             return $item;
         });
-        return $data;
-
     }
 
     protected function getScorePageContent($data) {
@@ -160,6 +213,11 @@ class Jw extends BaseService
     }
 
     protected function generateRequestScoreData($configData) {
+        $this->timeType = $configData['time_type'];
+        $this->scoreType = $configData['score_type'];
+        $this->beginYear = $configData['begin_year'];
+        $this->endYear = $configData['end_year'];
+        $this->term = $configData['term'];
         $data['sjxz'] = $this->timeChooseArr[$configData['time_type']];    //时间选择
         $data['ysyx'] = $this->scoreChooseArr[$configData['score_type']];   //成绩选择
         $data['zx'] = "1";
@@ -175,4 +233,83 @@ class Jw extends BaseService
         return $data;
     }
 
+    protected function getTableRules() {
+        $rule = [
+            'name' => ['td:eq(1)','html'],
+            'credit' => ['td:eq(2)','text'],
+            'type' =>['td:eq(3)','text'],
+            'quality' =>['td:eq(4)','text'],
+            'assessment_method' => ['td:eq(5)','text'],
+            'get_method' => ['td:eq(6)','text'],
+            'score' => ['td:eq(7)','text'],
+        ];
+        if($this->scoreType == 0 && $this->timeType == 2) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'get_method' => ['td:eq(6)','text'],
+                'score' => ['td:eq(7)','text'],
+            ];
+        }elseif($this->scoreType == 1 && $this->timeType == 2) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'score' => ['td:eq(6)','text'],
+                'get_credit' => ['td:eq(7)','text'],
+                'gpa' => ['td:eq(8)','text'],
+                'credit_gpa' => ['td:eq(9)','text']
+            ];
+        }else if($this->scoreType==0 && $this->timeType == 1) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'get_method' => ['td:eq(6)','text'],
+                'score' => ['td:eq(7)','text'],
+            ];
+        }else if($this->scoreType == 1 && $this->timeType == 1) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'score' => ['td:eq(6)','text'],
+                'get_credit' => ['td:eq(7)','text'],
+                'gpa' => ['td:eq(8)','text'],
+                'credit_gpa' => ['td:eq(9)','text']
+            ];
+        }else if($this->scoreType == 0 && $this->timeType == 0) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'get_method' => ['td:eq(6)','text'],
+                'score' => ['td:eq(7)','text'],
+            ];
+        }else if($this->scoreType == 1 && $this->timeType == 0) {
+            $rule = [
+                'name' => ['td:eq(1)','html'],
+                'credit' => ['td:eq(2)','text'],
+                'type' =>['td:eq(3)','text'],
+                'quality' =>['td:eq(4)','text'],
+                'assessment_method' => ['td:eq(5)','text'],
+                'score' => ['td:eq(6)','text'],
+                'get_credit' => ['td:eq(7)','text'],
+                'gpa' => ['td:eq(8)','text'],
+                'credit_gpa' => ['td:eq(9)','text']
+            ];
+        }
+        return $rule;
+    }
 }
