@@ -162,7 +162,8 @@ class Jw extends BaseService
                 return $item;
             }
         });
-        array_pop($res);
+        if(count($res)!=0 && $res[count($res)-1]==null)
+            array_pop($res);
         return $res;
     }
 

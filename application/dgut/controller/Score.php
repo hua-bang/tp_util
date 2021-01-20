@@ -25,7 +25,12 @@ class Score
     }
 
     public function getScore() {
-        $configData = input("post.config");
+        $configData = [];
+        $configData['time_type'] = input("post.time_type");
+        $configData['score_type'] = input("post.score_type");
+        $configData['begin_year'] = input("post.begin_year");
+        $configData['end_year'] = input("post.end_year");
+        $configData['term'] = input("post.term");
         return (new ResponseUtil(['data' => (new Jw())->getScore($configData)]))->toResult();
     }
 }
