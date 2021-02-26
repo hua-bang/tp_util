@@ -55,7 +55,9 @@ class Cet
     }
 
     public function getScoreByTicket() {
-        $data = "CET_202012_DANGCI,44063002111404,胡佳华";
+        $ticket = input("post.ticket");
+        $name = input("post.name");
+        $data = "CET_202012_DANGCI,${ticket},${name}";
         return (new CetService())->getSingleScore($data);
     }
 
