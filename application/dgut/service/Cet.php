@@ -103,13 +103,13 @@ class Cet
             "form_params" => $data,
             'cookies' => $this->cookiesJar
         ]);
-        $resCode = json_decode($res->getBody()->getContents(),true)["ExceuteResultType"];
-        if($resCode ==-1) {
+        $result = json_decode($res->getBody()->getContents(),true);
+        if($result["ExceuteResultType"] === -1) {
             throw new BaseException([
                "msg" => "验证码错误,请重试"
             ]);
         }
-        return json_decode(((json_decode($res->getBody()->getContents(),true))["Message"]))[0]->TestTicket;
+        return json_decode($result["Message"])[0]->TestTicket;
     }
 
     public function getSingleScore($data) {
