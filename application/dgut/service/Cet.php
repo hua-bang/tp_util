@@ -103,8 +103,8 @@ class Cet
             "form_params" => $data,
             'cookies' => $this->cookiesJar
         ]);
-        $res = json_decode($res->getBody()->getContents(),true)["ExceuteResultType"];
-        if($res==-1) {
+        $resCode = json_decode($res->getBody()->getContents(),true)["ExceuteResultType"];
+        if($resCode ==-1) {
             throw new BaseException([
                "msg" => "验证码错误,请重试"
             ]);
