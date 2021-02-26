@@ -29,6 +29,20 @@ class Cet
         exit;
     }
 
+    public function getQueryValidatePhoto($key) {
+        $image = (new CetService())->getQueryValidate($key);
+        echo $image;exit;
+    }
+
+    public function getTicket($code,$key){
+        $data["IDNumber"] = input("post.IDNumber");
+        $data["Name"] = input("post.Name");
+        $data['provinceCode'] = 44;
+        $data['IDTypeCode'] = 1;
+        $data['verificationCode'] = $code;
+        return (new CetService())->getTicket($data,$key);
+    }
+
     public function getCetCookies($key) {
     }
 
@@ -38,5 +52,19 @@ class Cet
                 "c" => 1
             ]
         ]]);
+    }
+
+    public function getScoreByTicket() {
+        $data = "CET_202012_DANGCI,44063002111404,胡佳华";
+        return (new CetService())->getSingleScore($data);
+    }
+
+    public function getScoreByIdCard($code,$key) {
+        $data["IDNumber"] = input("post.IDNumber");
+        $data["Name"] = input("post.Name");
+        $data['provinceCode'] = 44;
+        $data['IDTypeCode'] = 1;
+        $data['verificationCode'] = $code;
+        return (new CetService())->getScoreIdCard($key,$data);
     }
 }
