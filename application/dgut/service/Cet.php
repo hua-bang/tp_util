@@ -27,7 +27,7 @@ class Cet
     private $baseDetailUrl = "http://appquery.neea.edu.cn/api/result/data?";
     private $basePhotoUrl = "http://appquery.neea.edu.cn/api/result/photo?";
     private $ticketUrl = "http://cet-bm.neea.cn/Home/ToQueryTestTicket";
-    private $scoreUrl = "http://cachecloud.neea.cn/cet/query?data=";
+    private $scoreUrl = "http://cache.neea.edu.cn/cet/query?data=";
 
 
     public function __construct()
@@ -116,8 +116,8 @@ class Cet
         $url = $this->scoreUrl.$data;
         $res = $this->client->request('get',$url,[
             'headers' => [
-                "Referer" => "http://cjcx.neea.edu.cn/",
-                "Host" => "appquery.neea.edu.cn"
+                "Referer" => "http://cet.neea.edu.cn/",
+                "Host" => "cache.neea.edu.cn"
             ]
         ]);
         $obj = [];
