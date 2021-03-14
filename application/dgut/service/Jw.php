@@ -49,7 +49,7 @@ class Jw extends BaseService
         $ql = QueryList::html($data);
         $html = $ql->find('script')->htmls();
         $tokenStr = $html->all()[7];
-        return substr($tokenStr,124,32);
+        return substr($tokenStr,127,32);
     }
 
     /**
