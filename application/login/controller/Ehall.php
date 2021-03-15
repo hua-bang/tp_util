@@ -6,6 +6,7 @@ use app\dgut\service\BaseService;
 use GuzzleHttp\Cookie\CookieJar;
 use QL\QueryList;
 use GuzzleHttp\Client;
+use app\lib\exception\TokenException;
 
 
 class Ehall extends BaseService
